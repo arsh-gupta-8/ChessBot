@@ -1,6 +1,5 @@
 import pygame
 import chess
-import math
 
 pygame.init()
 
@@ -9,6 +8,8 @@ WIDTH, HEIGHT = 480, 480
 SQ_SIZE = WIDTH // 8
 WHITE = (238, 238, 210)
 BLACK = (118, 150, 86)
+RED = (201, 29, 34)
+BLUE = (65, 105, 225)
 
 pieces = ['r', 'n', 'b', 'k', 'q', 'p']
 pieceImages = {}
@@ -22,6 +23,10 @@ for image in pieceImages:
 board = chess.Board()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Chess Display")
+
+legalMoves = []
+squareHighlight = False
+pieceHighlight = None
 
 
 def displayBoard():
@@ -41,11 +46,30 @@ def displayPieces():
                 piece_colour = "w"
 
             pieceImage = pieceImages[piece_colour + piece_symbol]
-            row = math.floor(square/8)
+            row = square//8
             col = square % 8
 
             screen.blit(pieceImage, (col * SQ_SIZE, (7 - row) * SQ_SIZE))
 
+
+def displayHighlights():
+    if pieceHighlight is not None:
+        row = 7 - pieceHighlight // 8
+        col = pieceHighlight % 8
+        pygame.draw.rect(screen, BLUE, pygame.Rect(col * SQ_SIZE, row * SQ_SIZE, SQ_SIZE, SQ_SIZE))
+
+    for move in legalMoves:
+        square = move.to_square
+        row = 7 - (square // 8)
+        col = square % 8
+        pygame.draw.rect(screen, RED, pygame.Rect(col * SQ_SIZE, row * SQ_SIZE, SQ_SIZE, SQ_SIZE))
+
+
+def pieceClicked():
+    x, y = pygame.mouse.get_pos()
+    col = x // SQ_SIZE
+    row = 7 - (y // SQ_SIZE)
+    return chess.square(col, row)
 
 
 running = True
@@ -54,7 +78,27 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            selectedSquare = pieceClicked()
+            legalMoves = []
+
+            if board.piece_at(selectedSquare):
+                pieceHighlight = selectedSquare
+                for move in board.legal_moves:
+                    if move.from_square == pieceHighlight:
+                        legalMoves.append(move)
+
+            else:
+                for move in legalMoves:
+                    if move.to_square == selectedSquare:
+                        board.push(move)
+                        break
+                selectedSquare = None
+                pieceHighlight = None
+                legalMoves = []
+
     displayBoard()
+    displayHighlights()
     displayPieces()
     pygame.display.flip()
 
