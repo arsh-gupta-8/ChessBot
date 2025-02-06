@@ -27,6 +27,7 @@ pygame.display.set_caption("Chess Display")
 legalMoves = []
 squareHighlight = False
 pieceHighlight = None
+whiteTurn = True
 
 
 def displayBoard():
@@ -80,10 +81,11 @@ while running:
 
         elif event.type == pygame.MOUSEBUTTONDOWN:
             selectedSquare = pieceClicked()
-            legalMoves = []
 
-            if board.piece_at(selectedSquare):
+            piece = board.piece_at(selectedSquare)
+            if piece and piece.color == board.turn:
                 pieceHighlight = selectedSquare
+                legalMoves = []
                 for move in board.legal_moves:
                     if move.from_square == pieceHighlight:
                         legalMoves.append(move)
