@@ -8,17 +8,20 @@ WIDTH, HEIGHT = 480, 480
 SQ_SIZE = WIDTH // 8
 WHITE = (238, 238, 210)
 BLACK = (118, 150, 86)
-RED = (201, 29, 34)
-BLUE = (65, 105, 225)
+RED = (201, 29, 34, 100)
+BLUE = (65, 105, 225, 100)
 
 pieces = ['r', 'n', 'b', 'k', 'q', 'p']
 pieceImages = {}
+pieceSmallImages = {}
 for piece in pieces:
     pieceImages['w' + piece] = pygame.image.load(f"ChessPieces/w{piece}.png")
     pieceImages['b' + piece] = pygame.image.load(f"ChessPieces/b{piece}.png")
 
 for image in pieceImages:
     pieceImages[image] = pygame.transform.scale(pieceImages[image], (SQ_SIZE, SQ_SIZE))
+    pieceSmallImages[image] = pygame.transform.scale(pieceImages[image], (SQ_SIZE//4, SQ_SIZE//4))
+
 
 board = chess.Board()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -73,6 +76,40 @@ def pieceClicked():
     return chess.square(col, row)
 
 
+def piecePromote(pmove, selectedSquare):
+    print("ran function")
+    if board.piece_at(pmove.from_square).piece_type == chess.PAWN:
+        print("pawn moved")
+        if (chess.square_rank(pmove.to_square)) == 7:  # white promotion
+            print("white promotion")
+            promotionPos = chess.square_file(selectedSquare) * SQ_SIZE
+            sq_colour = BLACK
+            if (chess.square_file(selectedSquare) + chess.square_rank(selectedSquare)) % 2:
+                sq_colour = WHITE
+            pygame.draw.rect(screen, sq_colour, pygame.Rect(promotionPos, 0, SQ_SIZE, SQ_SIZE))
+            screen.blit(pieceSmallImages["wq"], (promotionPos, 0))
+            screen.blit(pieceSmallImages["wr"], (promotionPos + (SQ_SIZE//2), 0))
+            screen.blit(pieceSmallImages["wb"], (promotionPos, (SQ_SIZE // 2)))
+            screen.blit(pieceSmallImages["wb"], (promotionPos + (SQ_SIZE // 2), (SQ_SIZE // 2)))
+            checkClickPromotion = True
+            while checkClickPromotion:
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    x, y = pygame.mouse.get_pos()
+                    if promotionPos < x < promotionPos + SQ_SIZE and 0 < x < SQ_SIZE:
+                        checkClickPromotion = False
+                        if promotionPos < x < (promotionPos + (SQ_SIZE//2)) and 0 < x < SQ_SIZE//2:
+                            pmove.promotion = chess.QUEEN
+                        elif promotionPos + SQ_SIZE//2 < x < (promotionPos + SQ_SIZE) and 0 < x < SQ_SIZE//2:
+                            pmove.promotion = chess.ROOK
+                        elif promotionPos < x < (promotionPos + (SQ_SIZE//2)) and SQ_SIZE//2 < x < SQ_SIZE:
+                            pmove.promotion = chess.BISHOP
+                        elif promotionPos + SQ_SIZE//2 < x < (promotionPos + SQ_SIZE) and SQ_SIZE//2 < x < SQ_SIZE:
+                            pmove.promotion = chess.KNIGHT
+
+
 running = True
 while running:
     for event in pygame.event.get():
@@ -93,6 +130,7 @@ while running:
             else:
                 for move in legalMoves:
                     if move.to_square == selectedSquare:
+                        piecePromote(move, selectedSquare)
                         board.push(move)
                         break
                 selectedSquare = None
